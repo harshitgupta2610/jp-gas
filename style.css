@@ -980,32 +980,41 @@ button {
   opacity: 0.9;
 }
 
+.product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .product-category-tag {
   position: absolute;
   top: 12px;
   right: 12px;
-  padding: 4px 14px;
+  padding: 6px 14px;
   font-family: var(--font-heading);
-  font-size: 0.7rem;
-  font-weight: 600;
+  font-size: 0.72rem;
+  font-weight: 700;
   border-radius: var(--radius-xl);
   text-transform: uppercase;
   letter-spacing: 1px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 2;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .tag-industrial {
-  background: rgba(65, 90, 119, 0.12);
-  color: var(--blue-green);
+  background: rgba(13, 27, 42, 0.92);
+  color: #e0e1dd;
 }
 
 .tag-medical {
-  background: rgba(119, 141, 169, 0.12);
-  color: var(--amber);
+  background: rgba(37, 211, 102, 0.92);
+  color: white;
 }
 
 .tag-specialty {
-  background: rgba(224, 225, 221, 0.2);
-  color: var(--deep-blue);
+  background: rgba(65, 90, 119, 0.92);
+  color: #e0e1dd;
 }
 
 .product-info {
