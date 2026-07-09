@@ -74,24 +74,7 @@
     });
   }
 
-  // ======== DARK MODE ========
-  const darkToggle = document.getElementById('darkToggle');
-  const html = document.documentElement;
 
-  // Check saved preference
-  const savedTheme = localStorage.getItem('jp-gas-theme');
-  if (savedTheme) {
-    html.setAttribute('data-theme', savedTheme);
-    darkToggle.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
-  }
-
-  darkToggle.addEventListener('click', () => {
-    const current = html.getAttribute('data-theme');
-    const next = current === 'dark' ? 'light' : 'dark';
-    html.setAttribute('data-theme', next);
-    localStorage.setItem('jp-gas-theme', next);
-    darkToggle.textContent = next === 'dark' ? '☀️' : '🌙';
-  });
 
   // ======== SCROLL ANIMATIONS ========
   function handleScrollAnimations() {
