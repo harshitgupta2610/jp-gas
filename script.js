@@ -210,15 +210,14 @@
   });
 
   // ======== WHATSAPP INQUIRY ========
-  window.enquireWhatsApp = function (productName, price) {
+  window.enquireWhatsApp = function (productName) {
     const message = `Hello JP GAS,
 
 I would like to enquire about:
 
 Product: ${productName}
-Price: ${price}
 
-Please share availability and delivery details.
+Please share pricing, availability and delivery details.
 
 Thank you.`;
 
