@@ -323,62 +323,102 @@ Thank you.`;
 
   window.addEventListener('scroll', onScroll, { passive: true });
 
-  // ======== VISITOR COUNTER ========
-  function initVisitorCounter() {
-    const counterEl = document.getElementById('visitorCounter');
-    const countEl = document.getElementById('visitorCount');
-    if (!counterEl || !countEl) return;
+  // ======== VISITOR TRACKING & LOGGING ========
+  function getDeviceType() {
+    const ua = navigator.userAgent;
+    if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
+      return 'Tablet';
+    }
+    if (/Mobile|iP(hone|od)|Android|BlackBerry|IEMobile|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/i.test(ua)) {
+      return 'Mobile';
+    }
+    return 'Desktop';
+  }
 
-    const namespace = 'jpgas.in';
-    const key = 'visits';
+  function logVisitorDetails(ipData) {
+    const isLocalConfigured = typeof CONFIG !== 'undefined';
+    const supabaseUrl = isLocalConfigured ? CONFIG.SUPABASE_URL : '';
+    const supabaseKey = isLocalConfigured ? CONFIG.SUPABASE_KEY : '';
+
+    if (!supabaseUrl || !supabaseKey) {
+      // No database configured - use localStorage for local/demonstration tracking
+      try {
+        let localLogs = JSON.parse(localStorage.getItem('jpgas_local_logs') || '[]');
+        const newLog = {
+          id: 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+          created_at: new Date().toISOString(),
+          ip: ipData.ip || '127.0.0.1',
+          city: ipData.city || 'Localhost',
+          region: ipData.region || 'Local',
+          country: ipData.country_name || 'Local Country',
+          user_agent: navigator.userAgent,
+          referrer: document.referrer || 'Direct',
+          device: getDeviceType()
+        };
+        localLogs.unshift(newLog);
+        localLogs = localLogs.slice(0, 100); // Keep last 100 logs
+        localStorage.setItem('jpgas_local_logs', JSON.stringify(localLogs));
+      } catch (e) {
+        console.error('Error logging to local storage:', e);
+      }
+      return;
+    }
+
+    const endpoint = `${supabaseUrl}/rest/v1/visits`;
+    const payload = {
+      ip: ipData.ip || 'Unknown',
+      city: ipData.city || 'Unknown',
+      region: ipData.region || 'Unknown',
+      country: ipData.country_name || 'Unknown',
+      user_agent: navigator.userAgent,
+      referrer: document.referrer || 'Direct',
+      device: getDeviceType()
+    };
+
+    fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(payload)
+    })
+    .catch(err => {
+      console.warn('Error sending visit log to Supabase:', err);
+    });
+  }
+
+  function trackSession() {
     const isNewSession = !sessionStorage.getItem('jpgas_visited');
     
-    // Using Abacus API (CORS-friendly for both GET and HIT)
+    // Retrieve configuration
+    const isLocalConfigured = typeof CONFIG !== 'undefined';
+    const namespace = isLocalConfigured ? (CONFIG.ABACUS_NAMESPACE || 'jpgas.in') : 'jpgas.in';
+    const key = isLocalConfigured ? (CONFIG.ABACUS_KEY || 'visits') : 'visits';
+
     const endpoint = isNewSession
       ? `https://abacus.jasoncameron.dev/hit/${namespace}/${key}`
       : `https://abacus.jasoncameron.dev/get/${namespace}/${key}`;
 
-    // Helper to format number with commas
-    const formatNumber = (num) => {
-      return parseInt(num).toLocaleString();
-    };
-
-    // Helper to show the counter element with a smooth fade-in
-    const showCounter = (value) => {
-      countEl.textContent = formatNumber(value);
-      counterEl.style.display = 'inline-flex';
-      counterEl.style.opacity = '0';
-      setTimeout(() => {
-        counterEl.style.opacity = '1';
-      }, 50);
-    };
-
     fetch(endpoint)
       .then(response => {
-        if (!response.ok) {
-          throw new Error('API response not ok');
-        }
+        if (!response.ok) throw new Error('Abacus response not ok');
         return response.json();
       })
       .then(data => {
-        // Abacus returns data in the format: { "value": X }
         const countValue = data && typeof data.value !== 'undefined' ? data.value : undefined;
-        if (typeof countValue !== 'undefined') {
-          showCounter(countValue);
-          if (isNewSession) {
-            sessionStorage.setItem('jpgas_visited', 'true');
-          }
-        } else {
-          throw new Error('Invalid data format');
+        if (countValue && isNewSession) {
+          sessionStorage.setItem('jpgas_visited', 'true');
         }
       })
       .catch(error => {
-        console.warn('Visitor visitor API failed. Using local fallback.', error);
+        console.warn('Visitor API failed. Using local fallback.', error);
         
-        // Fallback: Use localStorage to keep track of a local count for offline/failure cases
         let localHits = localStorage.getItem('jpgas_local_hits');
         if (!localHits) {
-          localHits = 0; // Starting from 0 so first visit is 1
+          localHits = 0;
         } else {
           localHits = parseInt(localHits);
         }
@@ -388,15 +428,30 @@ Thank you.`;
           localStorage.setItem('jpgas_local_hits', localHits);
           sessionStorage.setItem('jpgas_visited', 'true');
         }
-
-        showCounter(localHits);
       });
+
+    // Detailed visitor logging for new sessions
+    if (isNewSession) {
+      fetch('https://ipapi.co/json/')
+        .then(res => {
+          if (!res.ok) throw new Error('IP info query failed');
+          return res.json();
+        })
+        .then(data => {
+          logVisitorDetails(data);
+        })
+        .catch(err => {
+          console.warn('Geolocation API failed. Logging with basic details.', err);
+          logVisitorDetails({});
+        });
+    }
   }
 
   // Initial calls
   handleScrollAnimations();
   handleNavbarScroll();
   updateScrollProgress();
-  initVisitorCounter();
+  trackSession();
 
 })();
+

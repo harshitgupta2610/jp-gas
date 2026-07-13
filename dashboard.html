@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JP GAS — Admin Analytics Dashboard</title>
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="images/hero-cylinders.png">
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="dashboard.css">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- ======== PASSCODE GATE SCREEN ======== -->
+  <div class="passcode-screen" id="passcodeScreen">
+    <div class="passcode-card" id="passcodeCard">
+      <div class="passcode-logo">JP GAS</div>
+      <h2 class="passcode-title">Admin Dashboard Access</h2>
+      <div class="passcode-input-group">
+        <input type="password" class="passcode-input" id="passcodeField" placeholder="••••••••" maxlength="15" autocomplete="current-password">
+      </div>
+      <button class="passcode-btn" id="passcodeBtn">Enter Dashboard</button>
+      <div class="passcode-error" id="passcodeError">Invalid passcode. Please try again.</div>
+    </div>
+  </div>
+
+  <!-- ======== DASHBOARD HEADER ======== -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">JP</div>
+      <div class="brand-text">JP GAS</div>
+      <span class="brand-tag">Analytics Dashboard</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn-secondary" id="btnShowSetup">⚙️ Setup Database</button>
+      <button class="btn-primary" id="btnRefresh">🔄 Refresh Data</button>
+      <button class="btn-secondary" id="btnLogout" style="border-color: rgba(255, 78, 80, 0.3); color: #ff4e50;">🚪 Logout</button>
+    </div>
+  </header>
+
+  <!-- ======== MAIN CONTAINER ======== -->
+  <main class="dashboard-container">
+    
+    <!-- DATABASE CONNECTION ALERT -->
+    <div class="alert-banner" id="setupAlert" style="display: none;">
+      <div class="alert-content">
+        <span>💡</span>
+        <span><strong>Database Not Connected:</strong> You are currently viewing simulated demo logs. To store real visitor history, connect your free Supabase database.</span>
+      </div>
+      <button class="alert-btn" id="btnSetupAlert">Set Up Database Now</button>
+    </div>
+
+    <!-- STATS SUMMARY CARDS -->
+    <section class="stats-grid">
+      <div class="stat-card visits">
+        <div class="stat-header">
+          <span class="stat-title">Total Site Visits</span>
+          <span class="stat-icon">📈</span>
+        </div>
+        <div class="stat-value" id="cardHits">0</div>
+        <div class="stat-subtext">Cumulative hits tracked by Abacus API</div>
+      </div>
+      
+      <div class="stat-card database">
+        <div class="stat-header">
+          <span class="stat-title">Logged Visits</span>
+          <span class="stat-icon">🗄️</span>
+        </div>
+        <div class="stat-value" id="cardDatabase">0</div>
+        <div class="stat-subtext">Visits registered in database logs</div>
+      </div>
+      
+      <div class="stat-card countries">
+        <div class="stat-header">
+          <span class="stat-title">Target Markets</span>
+          <span class="stat-icon">🌐</span>
+        </div>
+        <div class="stat-value" id="cardCountries">0</div>
+        <div class="stat-subtext">Unique countries visiting your site</div>
+      </div>
+      
+      <div class="stat-card devices">
+        <div class="stat-header">
+          <span class="stat-title">Desktop / Mobile</span>
+          <span class="stat-icon">💻</span>
+        </div>
+        <div class="stat-value" id="cardDevices">0% / 0%</div>
+        <div class="stat-subtext">Device type breakdown of visitor base</div>
+      </div>
+    </section>
+
+    <!-- CHARTS GRID -->
+    <section class="charts-grid">
+      <!-- Visitor Trend Line Chart -->
+      <div class="chart-card">
+        <div class="chart-title">
+          <span>Weekly Visit Trends</span>
+          <span class="chart-subtitle">Hits per day over the last week</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="trendChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Country Breakdown Doughnut Chart -->
+      <div class="chart-card">
+        <div class="chart-title">
+          <span>Top Locations</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="countryChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Device Breakdown Doughnut Chart -->
+      <div class="chart-card" style="display: none;">
+        <div class="chart-title">
+          <span>Device Type</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="deviceChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- VISITOR LOGS TABLE -->
+    <section class="table-card">
+      <div class="table-header-row">
+        <h2 class="table-title">Visitor Logs Registry</h2>
+        <div class="table-controls">
+          <input type="text" class="search-input" id="searchInput" placeholder="🔍 Search IP, location, device...">
+        </div>
+      </div>
+      
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>IP Address</th>
+              <th>Location</th>
+              <th>Device & Browser</th>
+              <th>Referrer Link</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <!-- Dynamic data loaded by dashboard.js -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination controls -->
+      <div class="pagination">
+        <div id="pageInfo">Loading visitor records...</div>
+        <div class="pagination-buttons">
+          <button class="pagination-btn" id="btnPrevPage" disabled>Previous</button>
+          <button class="pagination-btn" id="btnNextPage" disabled>Next</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ======== SUPABASE SETUP MODAL (WIZARD) ======== -->
+  <div class="wizard-overlay" id="wizardOverlay">
+    <div class="wizard-card">
+      <div class="wizard-header">
+        <h2 class="wizard-title">🔌 Connect Visitor Analytics Database</h2>
+        <button class="wizard-close" id="wizardClose">&times;</button>
+      </div>
+      <div class="wizard-body">
+        
+        <div class="wizard-step">
+          <h3 class="step-title"><span class="step-num">1</span> Create a Free Supabase Database</h3>
+          <p class="wizard-text">
+            Go to <a href="https://supabase.com" target="_blank" rel="noopener" style="color: var(--accent-cyan); text-decoration: underline;">supabase.com</a>, log in or create a free account, and set up a new project (e.g. <em>jpgas-analytics</em>). This takes less than 2 minutes.
+          </p>
+        </div>
+
+        <div class="wizard-step">
+          <h3 class="step-title"><span class="step-num">2</span> Create the Database Table</h3>
+          <p class="wizard-text">
+            Open the <strong>SQL Editor</strong> tab on the left sidebar in your Supabase project dashboard, click <strong>New Query</strong>, paste the following SQL script, and click <strong>Run</strong>:
+          </p>
+          <div class="code-block-container">
+            <button class="btn-copy" id="btnCopySql">📋 Copy SQL</button>
+            <pre class="code-block" id="sqlCode">create table visits (
+  id uuid default gen_random_uuid() primary key,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  ip text,
+  city text,
+  region text,
+  country text,
+  user_agent text,
+  referrer text,
+  device text
+);
+
+-- Enable Row Level Security (RLS)
+alter table visits enable row level security;
+
+-- Create policy to allow public inserts
+create policy "Allow public inserts" on visits 
+  for insert with check (true);
+
+-- Create policy to allow public selects (for dashboard loading)
+create policy "Allow public selects" on visits 
+  for select using (true);</pre>
+          </div>
+        </div>
+
+        <div class="wizard-step">
+          <h3 class="step-title"><span class="step-num">3</span> Configure Your Website</h3>
+          <p class="wizard-text">
+            Go to <strong>Project Settings -> API</strong> in Supabase, copy your <strong>Project URL</strong> and your <strong>anon/public API key</strong>, and paste them into your project's local <a href="config.js" style="color: var(--accent-cyan); text-decoration: underline;">config.js</a> file:
+          </p>
+          <div class="code-block-container">
+            <pre class="code-block" style="overflow: hidden; max-height: none;">const CONFIG = {
+  ADMIN_PASSCODE: 'jpgas2026',
+  SUPABASE_URL: 'YOUR_SUPABASE_URL_HERE',
+  SUPABASE_KEY: 'YOUR_SUPABASE_ANON_KEY_HERE',
+  ...
+};</pre>
+          </div>
+          <p class="wizard-text" style="color: var(--accent-green);">
+            Once saved and uploaded, your website will automatically log all incoming visits, and this dashboard will fetch and render live, real-time analytics!
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Load Scripts -->
+  <script src="config.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+</html>
