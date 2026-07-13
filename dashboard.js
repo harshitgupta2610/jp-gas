@@ -33,13 +33,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const btnLogout = document.getElementById('btnLogout');
   const btnRefresh = document.getElementById('btnRefresh');
-  const btnShowSetup = document.getElementById('btnShowSetup');
-  
-  const setupAlert = document.getElementById('setupAlert');
-  const btnSetupAlert = document.getElementById('btnSetupAlert');
-  const wizardOverlay = document.getElementById('wizardOverlay');
-  const wizardClose = document.getElementById('wizardClose');
-  const btnCopySql = document.getElementById('btnCopySql');
 
   const cardHits = document.getElementById('cardHits');
   const cardDatabase = document.getElementById('cardDatabase');
@@ -101,14 +94,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- 2. Dashboard Initialization ---
   function initDashboard() {
-    // Show configuration alert if Supabase is not configured
-    const isSupabaseConfigured = SUPABASE_URL && SUPABASE_KEY;
-    if (!isSupabaseConfigured) {
-      setupAlert.style.display = 'flex';
-    } else {
-      setupAlert.style.display = 'none';
-    }
-
     // Load data
     loadDashboardData();
   }
@@ -610,64 +595,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return countryMap[key] || '🌐';
   }
 
-  // --- 8. Setup Wizard Actions ---
-  btnSetupAlert.addEventListener('click', openSetupWizard);
-  btnShowSetup.addEventListener('click', openSetupWizard);
-  wizardClose.addEventListener('click', closeSetupWizard);
-  
-  // Close overlay on click outside
-  wizardOverlay.addEventListener('click', (e) => {
-    if (e.target === wizardOverlay) closeSetupWizard();
-  });
-
-  function openSetupWizard() {
-    wizardOverlay.classList.add('active');
-  }
-
-  function closeSetupWizard() {
-    wizardOverlay.classList.remove('active');
-  }
-
-  btnCopySql.addEventListener('click', () => {
-    const sqlText = `create table visits (
-  id uuid default gen_random_uuid() primary key,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  ip text,
-  city text,
-  region text,
-  country text,
-  user_agent text,
-  referrer text,
-  device text
-);
-
--- Enable Row Level Security (RLS)
-alter table visits enable row level security;
-
--- Create policy to allow public inserts
-create policy "Allow public inserts" on visits 
-  for insert with check (true);
-
--- Create policy to allow public selects (for dashboard loading)
-create policy "Allow public selects" on visits 
-  for select using (true);`;
-
-    navigator.clipboard.writeText(sqlText).then(() => {
-      const origText = btnCopySql.textContent;
-      btnCopySql.textContent = 'Copied!';
-      btnCopySql.style.background = 'var(--accent-green)';
-      btnCopySql.style.color = '#080f1a';
-      
-      setTimeout(() => {
-        btnCopySql.textContent = origText;
-        btnCopySql.style.background = 'rgba(255, 255, 255, 0.08)';
-        btnCopySql.style.color = 'var(--text-secondary)';
-      }, 2000);
-    }).catch(err => {
-      console.error('Failed to copy text: ', err);
-      showToast('Copy failed. Please manually select the code to copy.');
-    });
-  });
 
   // --- 9. Toast Notifications ---
   function showToast(message) {
