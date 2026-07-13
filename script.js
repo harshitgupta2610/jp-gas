@@ -332,7 +332,11 @@ Thank you.`;
     const namespace = 'jpgas.in';
     const key = 'visits';
     const isNewSession = !sessionStorage.getItem('jpgas_visited');
-    const endpoint = `https://api.counterapi.dev/v1/${namespace}/${key}${isNewSession ? '/up' : ''}`;
+    
+    // Using Abacus API (CORS-friendly for both GET and HIT)
+    const endpoint = isNewSession
+      ? `https://abacus.jasoncameron.dev/hit/${namespace}/${key}`
+      : `https://abacus.jasoncameron.dev/get/${namespace}/${key}`;
 
     // Helper to format number with commas
     const formatNumber = (num) => {
@@ -357,7 +361,8 @@ Thank you.`;
         return response.json();
       })
       .then(data => {
-        const countValue = (data && typeof data.count !== 'undefined') ? data.count : (data ? data.value : undefined);
+        // Abacus returns data in the format: { "value": X }
+        const countValue = data && typeof data.value !== 'undefined' ? data.value : undefined;
         if (typeof countValue !== 'undefined') {
           showCounter(countValue);
           if (isNewSession) {
@@ -368,7 +373,7 @@ Thank you.`;
         }
       })
       .catch(error => {
-        console.warn('Visitor counter API failed. Using local fallback.', error);
+        console.warn('Visitor visitor API failed. Using local fallback.', error);
         
         // Fallback: Use localStorage to keep track of a local count for offline/failure cases
         let localHits = localStorage.getItem('jpgas_local_hits');
