@@ -357,8 +357,9 @@ Thank you.`;
         return response.json();
       })
       .then(data => {
-        if (data && typeof data.value !== 'undefined') {
-          showCounter(data.value);
+        const countValue = (data && typeof data.count !== 'undefined') ? data.count : (data ? data.value : undefined);
+        if (typeof countValue !== 'undefined') {
+          showCounter(countValue);
           if (isNewSession) {
             sessionStorage.setItem('jpgas_visited', 'true');
           }
@@ -372,7 +373,7 @@ Thank you.`;
         // Fallback: Use localStorage to keep track of a local count for offline/failure cases
         let localHits = localStorage.getItem('jpgas_local_hits');
         if (!localHits) {
-          localHits = 1248; // Baseline starting number for realism
+          localHits = 0; // Starting from 0 so first visit is 1
         } else {
           localHits = parseInt(localHits);
         }
